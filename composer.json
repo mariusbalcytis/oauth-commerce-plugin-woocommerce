@@ -1,0 +1,22 @@
+{
+    "name": "maba-oauth-commerce/accounts-woocommerce-plugin",
+    "type": "wordpress-plugin",
+    "description": "Accounts example system gateway plugin for WordPress WooCommerce",
+    "license": "MIT",
+    "minimum-stability": "dev",
+    "authors": [
+        {
+            "name": "Marius Balčytis",
+            "email": "marius.balcytis@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-0": {
+            "Maba": "src/"
+        }
+    },
+    "require": {
+        "composer/installers": "~1.0",
+        "maba-oauth-commerce/php-lib-accounts": "*"
+    }
+}

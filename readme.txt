@@ -1,0 +1,1 @@
+=== Accounts example system gateway plugin for WordPress WooCommerce ===
