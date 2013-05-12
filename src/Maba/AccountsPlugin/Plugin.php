@@ -3,6 +3,7 @@
 namespace Maba\AccountsPlugin;
 
 use Maba\OAuthCommerceAccountsClient\AccountsApi;
+use Maba\OAuthCommerceAccountsClient\AccountsApiFactory;
 use Maba\OAuthCommerceAccountsClient\DependencyInjection\AccountsClientExtension;
 use Maba\OAuthCommerceClient\DependencyInjection\BaseClientExtension;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -111,6 +112,6 @@ class Plugin
     public function createApi($credentials)
     {
         return $this->container->get('maba_oauth_commerce.factory.accounts_api')
-            ->createApi($credentials, self::DEFAULT_ENDPOINT);
+            ->createApi($credentials, AccountsApiFactory::DEFAULT_ENDPOINT);
     }
 }
