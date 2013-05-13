@@ -124,6 +124,23 @@ abstract class Gateway extends \WC_Payment_Gateway
         );
     }
 
+    protected function confirmTransaction(\WC_Order $order, $transactionKey, $token)
+    {
+        $order->add_order_note(__('Payment is to be confirmed', 'woocomerce'));
+        $order->payment_complete();
+
+        $this->log('Order #' . $order->id . ' Payment completed.');
+
+        $transaction = $this->api()->accounts()->confirmTransaction($transactionKey, $token)->getResult();
+        if ($transaction->getStatus() === 'done') {
+            $order->add_order_note(__('Payment successfully confirmed', 'woocomerce'));
+        } else {
+            $order->add_order_note(__('Error: got transaction status ' . $transaction->getStatus(), 'woocomerce'));
+        }
+
+        $this->log('Order #' . $order->id . ' Confirmed transaction, status ' . $transaction->getStatus());
+    }
+
     protected function log($message)
     {
         if ($this->logger) {

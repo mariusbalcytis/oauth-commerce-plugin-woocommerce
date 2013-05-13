@@ -36,14 +36,14 @@ class Maba_AccountsPlugin_RedirectGateway extends \Maba\AccountsPlugin\Gateway
 
     public function process_return()
     {
-        parse_str($_SERVER['QUERY_STRING'], $get);
+        parse_str($_SERVER['QUERY_STRING'], $get);  // this is needed as "error" parameter is unset somewhere in system
         $orderId = isset($get['order']) ? $get['order'] : null;
         $order = new \WC_Order($orderId);
         $params = isset($_SESSION['maba_oauth_commerce_accounts'][$orderId])
             ? $_SESSION['maba_oauth_commerce_accounts'][$orderId]
             : null;
 
-        if ($params) {
+        if ($params && $order->id && $order->status !== 'completed') {
             try {
                 $code = $this->api()->codeGrantHandler()->getCodeFromParameters($get, $params['state']);
             } catch (\Maba\OAuthCommerceClient\Exception\AuthorizationException $exception) {
@@ -53,16 +53,11 @@ class Maba_AccountsPlugin_RedirectGateway extends \Maba\AccountsPlugin\Gateway
                 header('Location: ' . $order->get_cancel_order_url());
                 exit;
             }
+            /** @var \Maba\OAuthCommerceClient\Entity\AccessToken $token */
             $token = $this->api()->auth()->exchangeCodeForToken($code, $params['redirectUri'])->getResult();
-
-            $transaction = $this->api()->accounts()->confirmTransaction($params['transaction'], $token)->getResult();
-            if ($transaction->getStatus() === 'done') {
-                if ($order->status !== 'completed') {
-                    $this->log('Order #' . $order->id . ' Callback payment completed.');
-
-                    $order->add_order_note(__('Payment successfully confirmed', 'woocomerce'));
-                    $order->payment_complete();
-                }
+            if (in_array('transaction:' . $params['transaction'], $token->getScopes())) {
+                $this->log('Order #' . $order->id . ' Got access token.');
+                $this->confirmTransaction($order, $params['transaction'], $token);
             }
         }
 

@@ -57,23 +57,7 @@ class Plugin
 
     protected function loadContainer()
     {
-        $container = new ContainerBuilder(new ParameterBag(array(
-            'maba_oauth_commerce.internal_client.default_base_url' => 'https://accounts.maba.lt/api/internal/v1',
-            'maba_oauth_commerce.auth_client.default_base_url' => 'https://accounts.maba.lt/api/auth/v1',
-        )));
-        $container->setResourceTracking(false);
-
-        $extension = new BaseClientExtension();
-        $container->registerExtension($extension);
-        $container->loadFromExtension($extension->getAlias());
-        $extension->addCompilerPasses($container);
-        $extension = new AccountsClientExtension();
-        $container->registerExtension($extension);
-        $container->loadFromExtension($extension->getAlias());
-
-        $container->compile();
-
-        $this->container = $container;
+        $this->container = AccountsApiFactory::loadContainer();
     }
 
     public function getBaseHost()

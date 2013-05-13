@@ -27,40 +27,43 @@ class Maba_AccountsPlugin_FormGateway extends \Maba\AccountsPlugin\Gateway
             if ($_POST['csrf'] === $_SESSION['maba_csrf']) {
                 $orderId = isset($_GET['order']) ? $_GET['order'] : null;
                 $order = new \WC_Order($orderId);
+                if ($order->id && $order->status !== 'completed') {
 
-                $transaction = $this->createTransaction($order);
-                try {
-                    $token = $this->api()->auth()->createSecretCredentialsToken(
-                        \Maba\OAuthCommerceClient\Entity\UserCredentials\Password::create()
-                            ->setSite('accounts.maba.lt')
-                            ->setUsername($_POST['username'])
-                            ->setPassword($_POST['password'])
-                        ,
-                        array('transaction:' . $transaction->getKey())
-                    )->getResult();
+                    $transaction = $this->createTransaction($order);
+                    try {
+                        $token = $this->api()->auth()->createSecretCredentialsToken(
+                            \Maba\OAuthCommerceClient\Entity\UserCredentials\Password::create()
+                                ->setSite('accounts.maba.lt')
+                                ->setUsername($_POST['username'])
+                                ->setPassword($_POST['password'])
+                            ,
+                            array('transaction:' . $transaction->getKey())
+                        )->getResult();
 
-                    $transaction = $this->api()->accounts()->reserveTransaction($transaction->getKey(), $token)->getResult();
-                    $transaction = $this->api()->accounts()->confirmTransaction($transaction->getKey(), $token)->getResult();
-                    if ($transaction->getStatus() === 'done') {
-                        if ($order->status !== 'completed') {
-                            $this->log('Order #' . $order->id . ' Callback payment completed.');
-
-                            $order->add_order_note(__('Payment successfully confirmed', 'woocomerce'));
-                            $order->payment_complete();
-
+                        $transaction = $this->api()->accounts()
+                            ->reserveTransaction($transaction->getKey(), $token)
+                            ->getResult();
+                        if ($transaction->getStatus() === 'reserved') {
+                            $this->log('Order #' . $order->id . ' Transaction reserved.');
+                            $this->confirmTransaction($order, $transaction->getKey(), $token);
                             header('Location: ' . $this->get_return_url($orderId));
                             exit;
+                        } else {
+                            $error = __('Unknown error', 'woocommerce');
+                        }
+
+                    } catch (\Maba\OAuthCommerceClient\Exception\ClientErrorException $exception) {
+                        if ($exception->getErrorCode() === 'invalid_credentials') {
+                            $error = __('Invalid credentials', 'woocommerce');
+                        } elseif ($exception->getErrorCode() === 'insufficient_funds') {
+                            $error = __('Insufficient funds in account', 'woocommerce');
+                        } else {
+                            $error = __('Unknown error', 'woocommerce');
                         }
                     }
 
-                } catch (\Maba\OAuthCommerceClient\Exception\ClientErrorException $exception) {
-                    if ($exception->getErrorCode() === 'invalid_credentials') {
-                        $error = __('Invalid credentials', 'woocommerce');
-                    } elseif ($exception->getErrorCode() === 'insufficient_funds') {
-                        $error = __('Insufficient funds in account', 'woocommerce');
-                    } else {
-                        $error = __('Unknown error', 'woocommerce');
-                    }
+                } else {
+                    $error = __('Order not found or it has invalid status to be paid', 'woocommerce');
                 }
             }
         }
