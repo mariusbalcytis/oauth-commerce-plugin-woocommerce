@@ -103,7 +103,7 @@ abstract class Gateway extends \WC_Payment_Gateway
             ),
             'mac_key' => array(
                 'title' => __('Shared of private key', 'woocommerce'),
-                'type' => 'text',
+                'type' => 'textarea',
                 'description' => __(
                     'Your generated private key in PEM format or provided shared key when registering client',
                     'woocommerce'
