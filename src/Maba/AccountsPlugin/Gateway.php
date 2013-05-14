@@ -31,7 +31,7 @@ abstract class Gateway extends \WC_Payment_Gateway
         $this->has_fields = false;
         $this->init_form_fields();
         $this->init_settings();
-        $settings = get_option($this->plugin_id . 'maba-oauth-commerce-accounts_settings', null) + array(
+        $settings = get_option($this->plugin_id . 'maba-oauth-commerce-accounts_settings', array()) + array(
             'access_token' => '',
             'mac_key' => '',
             'mac_algorithm' => '',
